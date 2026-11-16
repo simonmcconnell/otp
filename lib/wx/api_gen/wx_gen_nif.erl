@@ -1286,10 +1286,18 @@ gen_func_table(Defs) ->
     w("#include <wx/wx.h>~n"),
     w("#include \"../wxe_impl.h\"~n"),
     w("~n"),
-    {_Id, Entries} = gen_class_func_defs(Defs, {0,[]}),
+    {NextId, Entries} = gen_class_func_defs(Defs, {0,[]}),
+    w("extern void wxGridTableBase_new(WxeApp *app, wxeMemEnv *memenv, wxeCommand& Ecmd);~n"),
+    w("extern void wxGrid_SetTable(WxeApp *app, wxeMemEnv *memenv, wxeCommand& Ecmd);~n"),
+    w("extern void wxGridTableBase_SetRowCount(WxeApp *app, wxeMemEnv *memenv, wxeCommand& Ecmd);~n"),
+    w("extern void wxGridTableBase_SetColCount(WxeApp *app, wxeMemEnv *memenv, wxeCommand& Ecmd);~n"),
     w("~n"),
     w("wxe_fns_t wxe_fns[] =~n{~n"),
     [w("~s", [Str]) || Str <- lists:reverse(Entries)],
+    w("  {wxGridTableBase_new, \"wxGridTableBase\", \"new\", 4}, // ~p~n", [NextId]),
+    w("  {wxGrid_SetTable, \"wxGrid\", \"setTable\", 2}, // ~p~n", [NextId+1]),
+    w("  {wxGridTableBase_SetRowCount, \"wxGridTableBase\", \"setRowCount\", 2}, // ~p~n", [NextId+2]),
+    w("  {wxGridTableBase_SetColCount, \"wxGridTableBase\", \"setColCount\", 2}, // ~p~n", [NextId+3]),
     w("};~n").
 
 gen_class_func_defs([Class | Rest], Acc) ->

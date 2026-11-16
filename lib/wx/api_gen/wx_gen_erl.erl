@@ -139,6 +139,10 @@ gen_class1(C=#class{name=Name,parent=Parent,methods=Ms,options=Opts}) ->
 	    Exp = fun(M) -> gen_export(C,M) end,
 	    ExportList = lists:usort(lists:append(lists:map(Exp,reverse(Ms)))),
 	    w("-export([~s]).~n~n", [args(fun({EF,_}) -> EF end, ",", ExportList, 60)]),
+	    case Name of
+	        "wxGrid" -> w("-export([setTable/2]).~n~n", []);
+	        _ -> ok
+	    end,
 	    w("%% inherited exports~n",[]),
 	    Done0 = ["Destroy", "New", "Create", "destroy", "new", "create"],
 	    Done  = gb_sets:from_list(Done0 ++ [M|| #method{name=M} <- lists:append(Ms)]),
@@ -187,6 +191,13 @@ gen_class1(C=#class{name=Name,parent=Parent,methods=Ms,options=Opts}) ->
 	    gen_dest(C, Ms),
 
 	    gen_inherited(Parents, Done, true)
+    end,
+
+    case Name of
+        "wxGrid" ->
+            {ok, GridExtra} = file:read_file(filename:join([wx_extra, "wxGrid.erl"])),
+            w("~n~s~n", [GridExtra]);
+        _ -> ok
     end,
 
     close(),
@@ -1243,11 +1254,16 @@ filter_attrs(#class{name=Name, parent=Parent,attributes=Attrs}) ->
 
 gen_funcnames() ->
     Ns = get_unique_names(),
+    NextId = lists:max([Id || {_,_,_,Id} <- Ns]) + 1,
     open_write("../src/gen/wxe_funcs.hrl"),
     erl_wx_copyright(),
     w("%% This file is generated DO NOT EDIT~n~n", []),
     w("%% We define each id so we don't get huge diffs when adding new funcs/classes~n~n",[]),
     [w("-define(~s_~s, ~p).~n", [Class,Name,Id]) || {Class,Name,_,Id} <- Ns],
+    w("-define(wxGridTableBase_new, ~p).~n", [NextId]),
+    w("-define(wxGrid_SetTable, ~p).~n", [NextId+1]),
+    w("-define(wxGridTableBase_SetRowCount, ~p).~n", [NextId+2]),
+    w("-define(wxGridTableBase_SetColCount, ~p).~n", [NextId+3]),
     close().
 
 gen_api_footprint(All) ->
