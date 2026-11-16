@@ -232,7 +232,7 @@ parent_class(_Class) -> erlang:error({badtype, ?MODULE}).
 Default constructor.
 
 You must call `Create()` (not implemented in wx) to really create the grid window and
-also call `createGrid/4` or `SetTable()` (not implemented in wx) or `AssignTable()` (not implemented in
+also call `createGrid/4` or `SetTable()` or `AssignTable()` (not implemented in
 wx) to initialize its contents.
 """.
 -spec new() -> wxGrid().
@@ -251,7 +251,7 @@ new(Parent,Id)
 -doc """
 Constructor creating the grid window.
 
-You must call either `createGrid/4` or `SetTable()` (not implemented in wx) or `AssignTable()` (not
+You must call either `createGrid/4` or `SetTable()` or `AssignTable()` (not
 implemented in wx) to initialize the grid contents before using it.
 """.
 -spec new(Parent, Id, [Option]) -> wxGrid() when
@@ -629,7 +629,7 @@ stored in memory.
 
 For applications with more complex data types or relationships, or for dealing with very
 large datasets, you should derive your own grid table class and pass a table object to the
-grid with `SetTable()` (not implemented in wx) or `AssignTable()` (not implemented in wx).
+grid with `SetTable()` or `AssignTable()` (not implemented in wx).
 """.
 %%  Selmode = ?wxGrid_wxGridSelectCells | ?wxGrid_wxGridSelectRows | ?wxGrid_wxGridSelectColumns | ?wxGrid_wxGridSelectRowsOrColumns
 -spec createGrid(This, NumRows, NumCols, [Option]) -> boolean() when
@@ -1670,7 +1670,7 @@ Notice that inserting the columns in the grid requires grid table cooperation: w
 method is called, grid object begins by requesting the underlying grid table to insert new
 columns. If this is successful the table notifies the grid and the grid updates the
 display. For a default grid (one where you have called `createGrid/4`) this process is automatic. If you
-are using a custom grid table (specified with `SetTable()` (not implemented in wx) or `AssignTable()`
+are using a custom grid table (specified with `SetTable()` or `AssignTable()`
 (not implemented in wx)) then you must override `wxGridTableBase::InsertCols()` (not
 implemented in wx) in your derived table class.
 
