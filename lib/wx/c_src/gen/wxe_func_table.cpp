@@ -4053,6 +4053,11 @@ extern void wxWebViewEvent_GetTarget(WxeApp *app, wxeMemEnv *memenv, wxeCommand&
 extern void wxWebViewEvent_GetURL(WxeApp *app, wxeMemEnv *memenv, wxeCommand& Ecmd);
 #endif // WXE_WEBVIEW
 
+extern void wxGridTableBase_new(WxeApp *app, wxeMemEnv *memenv, wxeCommand& Ecmd);
+extern void wxGrid_SetTable(WxeApp *app, wxeMemEnv *memenv, wxeCommand& Ecmd);
+extern void wxGridTableBase_SetRowCount(WxeApp *app, wxeMemEnv *memenv, wxeCommand& Ecmd);
+extern void wxGridTableBase_SetColCount(WxeApp *app, wxeMemEnv *memenv, wxeCommand& Ecmd);
+
 wxe_fns_t wxe_fns[] =
 {
   {NULL, "", "", 0}, // 0
@@ -9126,4 +9131,8 @@ wxe_fns_t wxe_fns[] =
 #else
   {NULL, "wxWebViewEvent", "getURL", 0}, // 3634
 #endif // WXE_WEBVIEW
+  {wxGridTableBase_new, "wxGridTableBase", "new", 4}, // 3635
+  {wxGrid_SetTable, "wxGrid", "setTable", 2}, // 3636
+  {wxGridTableBase_SetRowCount, "wxGridTableBase", "setRowCount", 2}, // 3637
+  {wxGridTableBase_SetColCount, "wxGridTableBase", "setColCount", 2}, // 3638
 };
