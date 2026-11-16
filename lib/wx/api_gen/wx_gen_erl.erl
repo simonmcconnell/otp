@@ -201,6 +201,16 @@ gen_class1(C=#class{name=Name,parent=Parent,methods=Ms,options=Opts}) ->
     end,
 
     close(),
+    case Name of
+        "wxGrid" ->
+            GridFile = "../src/gen/wxGrid.erl",
+            {ok, GridSource} = file:read_file(GridFile),
+            GridDocs = binary:replace(GridSource,
+                                      <<"SetTable()` (not implemented in wx)">>,
+                                      <<"SetTable()`">>, [global]),
+            ok = file:write_file(GridFile, GridDocs);
+        _ -> ok
+    end,
     erase(current_class),
     C#class{methods=NewMs}.
 
