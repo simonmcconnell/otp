@@ -3494,3 +3494,7 @@
 -define(wxWebViewEvent_GetInt, 3632).
 -define(wxWebViewEvent_GetTarget, 3633).
 -define(wxWebViewEvent_GetURL, 3634).
+-define(wxGridTableBase_new, 3635).
+-define(wxGrid_SetTable, 3636).
+-define(wxGridTableBase_SetRowCount, 3637).
+-define(wxGridTableBase_SetColCount, 3638).

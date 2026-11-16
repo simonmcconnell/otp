@@ -68,7 +68,7 @@ overview_grid has examples of simple and more complex applications, explains the
 relationship between the various grid classes and has a summary of the keyboard shortcuts
 and mouse functions provided by `m:wxGrid`.
 
-A `wxGridTableBase` (not implemented in wx) class holds the actual data to be displayed
+A `m:wxGridTableBase` class holds the actual data to be displayed
 by a `m:wxGrid` class. One or more `m:wxGrid` classes may act as a view for one table
 class. The default table class is called `wxGridStringTable` (not implemented in wx) and
 holds an array of strings. An instance of such a class is created by `createGrid/4`.
@@ -174,7 +174,7 @@ wxWidgets docs: [wxGrid](https://docs.wxwidgets.org/3.2/classwx_grid.html)
   setReadOnly/3,setReadOnly/4,setRowAttr/3,setRowLabelAlignment/3,setRowLabelSize/2,
   setRowLabelValue/3,setRowMinimalAcceptableHeight/2,setRowMinimalHeight/3,
   setRowSize/3,setScrollLineX/2,setScrollLineY/2,setSelectionBackground/2,
-  setSelectionForeground/2,setSelectionMode/2,showCellEditControl/1,
+  setSelectionForeground/2,setSelectionMode/2,setTable/2,showCellEditControl/1,
   xToCol/2,xToCol/3,xToEdgeOfCol/2,yToEdgeOfRow/2,yToRow/2,yToRow/3]).
 
 %% inherited exports
@@ -3325,3 +3325,15 @@ disconnect(This) -> wxEvtHandler:disconnect(This).
 connect(This,EventType, Options) -> wxEvtHandler:connect(This,EventType, Options).
 -doc false.
 connect(This,EventType) -> wxEvtHandler:connect(This,EventType).
+
+-doc """
+Assigns a virtual table to the grid. Call this instead of `createGrid/3`.
+
+The grid takes ownership of `Table`, which must be a `m:wxGridTableBase`
+created by `wxGridTableBase:new/4` and not already assigned to another grid.
+""".
+-spec setTable(wxGrid(), wxGridTableBase:wxGridTableBase()) -> boolean().
+setTable(#wx_ref{type=ThisT}=This, #wx_ref{type=wxGridTableBase}=Table) ->
+  ?CLASS(ThisT, wxGrid),
+  wxe_util:queue_cmd(This, Table, ?get_env(), ?wxGrid_SetTable),
+  wxe_util:rec(?wxGrid_SetTable).
