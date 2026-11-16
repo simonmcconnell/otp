@@ -222,6 +222,136 @@ void EwxPrintout::GetPageInfo(int *minPage, int *maxPage, int *pageFrom, int *pa
 }
 
 /* *****************************************************************/
+// Grid table whose values are supplied by Erlang instead of wxGridStringTable.
+
+class EwxGridTable : public wxGridTableBase {
+public:
+  EwxGridTable(int rows, int cols, int getValue, int setValue, wxe_me_ref *ref)
+    : m_rows(rows), m_cols(cols), m_getValue(getValue), m_setValue(setValue),
+      m_ref(ref) {}
+
+  ~EwxGridTable() override {
+    clear_cb(m_ref, m_getValue);
+    clear_cb(m_ref, m_setValue);
+    ((WxeApp *)wxTheApp)->clearPtr(this);
+  }
+
+  int GetNumberRows() override { return m_rows; }
+  int GetNumberCols() override { return m_cols; }
+
+  wxString GetValue(int row, int col) override {
+    wxeMemEnv *memenv = (wxeMemEnv *)m_ref->memenv;
+    if (!memenv) return wxEmptyString;
+
+    wxeReturn rt(memenv, memenv->owner, false);
+    ERL_NIF_TERM args = enif_make_list(rt.env, 2,
+                                      rt.make_int(row), rt.make_int(col));
+    rt.send_callback(m_getValue, this, "wxGridTableBase", args);
+    wxeCommand *cb = ((WxeApp *)wxTheApp)->cb_return;
+    ErlNifBinary bin;
+    wxString value;
+    if (cb && enif_inspect_binary(cb->env, cb->args[0], &bin))
+      value = wxString(bin.data, wxConvUTF8, bin.size);
+    if (cb) delete cb;
+    return value;
+  }
+
+  void SetValue(int row, int col, const wxString& value) override {
+    wxeMemEnv *memenv = (wxeMemEnv *)m_ref->memenv;
+    if (!memenv) return;
+
+    wxeReturn rt(memenv, memenv->owner, false);
+    ERL_NIF_TERM args = enif_make_list(rt.env, 3, rt.make_int(row),
+                                      rt.make_int(col), rt.make(value));
+    rt.send_callback(m_setValue, this, "wxGridTableBase", args);
+    wxeCommand *cb = ((WxeApp *)wxTheApp)->cb_return;
+    if (cb) delete cb;
+  }
+
+  void SetRowCount(int rows) {
+    const int old = m_rows;
+    m_rows = rows;
+    if (wxGrid *grid = GetView()) {
+      if (rows > old)
+        grid->ProcessTableMessage(this, wxGRIDTABLE_NOTIFY_ROWS_APPENDED,
+                                  rows - old);
+      else if (rows < old)
+        grid->ProcessTableMessage(this, wxGRIDTABLE_NOTIFY_ROWS_DELETED,
+                                  rows, old - rows);
+    }
+  }
+
+  void SetColCount(int cols) {
+    const int old = m_cols;
+    m_cols = cols;
+    if (wxGrid *grid = GetView()) {
+      if (cols > old)
+        grid->ProcessTableMessage(this, wxGRIDTABLE_NOTIFY_COLS_APPENDED,
+                                  cols - old);
+      else if (cols < old)
+        grid->ProcessTableMessage(this, wxGRIDTABLE_NOTIFY_COLS_DELETED,
+                                  cols, old - cols);
+    }
+  }
+
+private:
+  int m_rows;
+  int m_cols;
+  int m_getValue;
+  int m_setValue;
+  wxe_me_ref *m_ref;
+};
+
+void wxGridTableBase_new(WxeApp *app, wxeMemEnv *memenv, wxeCommand& Ecmd)
+{
+  ErlNifEnv *env = Ecmd.env;
+  ERL_NIF_TERM *argv = Ecmd.args;
+  int rows, cols, getValue, setValue;
+  if (!enif_get_int(env, argv[0], &rows) || rows < 0) Badarg("rows");
+  if (!enif_get_int(env, argv[1], &cols) || cols < 0) Badarg("cols");
+  if (!enif_get_int(env, argv[2], &getValue)) Badarg("getValue");
+  if (!enif_get_int(env, argv[3], &setValue)) Badarg("setValue");
+  EwxGridTable *table = new EwxGridTable(rows, cols, getValue, setValue,
+                                        memenv->me_ref);
+  app->newPtr(table, 1, memenv);
+  wxeReturn rt(memenv, Ecmd.caller, true);
+  rt.send(rt.make_ref(app->getRef(table, memenv), "wxGridTableBase"));
+}
+
+void wxGrid_SetTable(WxeApp *app, wxeMemEnv *memenv, wxeCommand& Ecmd)
+{
+  ErlNifEnv *env = Ecmd.env;
+  ERL_NIF_TERM *argv = Ecmd.args;
+  wxGrid *grid = (wxGrid *)memenv->getPtr(env, argv[0], "grid");
+  EwxGridTable *table = (EwxGridTable *)memenv->getPtr(env, argv[1], "table");
+  if (!grid || !table || table->GetView()) Badarg("table");
+  const bool result = grid->SetTable(table, true);
+  wxeReturn rt(memenv, Ecmd.caller, true);
+  rt.send(rt.make_bool(result));
+}
+
+void wxGridTableBase_SetRowCount(WxeApp *app, wxeMemEnv *memenv, wxeCommand& Ecmd)
+{
+  ErlNifEnv *env = Ecmd.env;
+  ERL_NIF_TERM *argv = Ecmd.args;
+  EwxGridTable *table = (EwxGridTable *)memenv->getPtr(env, argv[0], "table");
+  int rows;
+  if (!table || !enif_get_int(env, argv[1], &rows) || rows < 0)
+    Badarg("rows");
+  table->SetRowCount(rows);
+}
+
+void wxGridTableBase_SetColCount(WxeApp *app, wxeMemEnv *memenv, wxeCommand& Ecmd)
+{
+  ErlNifEnv *env = Ecmd.env;
+  ERL_NIF_TERM *argv = Ecmd.args;
+  EwxGridTable *table = (EwxGridTable *)memenv->getPtr(env, argv[0], "table");
+  int cols;
+  if (!table || !enif_get_int(env, argv[1], &cols) || cols < 0)
+    Badarg("cols");
+  table->SetColCount(cols);
+}
+
 // ListCtrl with callbacks for VIRTUAL_TABLES
 
 wxString EwxListCtrl::OnGetItemText(long item, long col) const {
