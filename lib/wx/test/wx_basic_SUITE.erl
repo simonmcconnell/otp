@@ -30,7 +30,7 @@
 	 init_per_suite/1, end_per_suite/1, 
 	 init_per_testcase/2, end_per_testcase/2]).
 
--export([silent_start/1, create_window/1, several_apps/1, wx_api/1, wx_misc/1,
+-export([silent_start/1, create_window/1, virtual_grid/1, several_apps/1, wx_api/1, wx_misc/1,
          data_types/1, enums/1, wx_object/1, memory/1, undef_in_handle_info/1,
          undef_in_terminate/1,
          undef_handle_event/1, undef_handle_call/1, undef_handle_cast/1, undef_handle_info/1,
@@ -55,7 +55,7 @@ end_per_testcase(Func,Config) ->
 suite() -> [{ct_hooks,[ts_install_cth]}, {timetrap,{minutes,2}}].
 
 all() -> 
-    [silent_start, create_window, several_apps, wx_api, wx_misc,
+    [silent_start, create_window, virtual_grid, several_apps, wx_api, wx_misc,
      data_types, enums, memory, wx_object, {group, undef_callbacks},
      undef_in_handle_info, undef_in_terminate].
 
@@ -100,6 +100,40 @@ create_window(Config) ->
     timer:sleep(1000),
     ?m(true,wxWindow:show(Frame, [])),
     wx_test_lib:wx_destroy(Frame, Config).
+
+virtual_grid(TestInfo) when is_atom(TestInfo) -> wx_test_lib:tc_info(TestInfo);
+virtual_grid(_Config) ->
+    Wx = wx:new(),
+    Frame = wxFrame:new(Wx, ?wxID_ANY, "Virtual grid"),
+    Grid = wxGrid:new(Frame, ?wxID_ANY),
+    Data = ets:new(virtual_grid, [set, public]),
+    Get = fun(_Table, Row, Col) ->
+                  case ets:lookup(Data, {Row, Col}) of
+                      [{_, Value}] -> Value;
+                      [] -> <<>>
+                  end
+          end,
+    Set = fun(_Table, Row, Col, Value) ->
+                  ets:insert(Data, {{Row, Col}, unicode:characters_to_binary(Value)})
+          end,
+    Table = wxGridTableBase:new(250000, 3, Get, Set),
+    true = wxGrid:setTable(Grid, Table),
+    250000 = wxGrid:getNumberRows(Grid),
+    3 = wxGrid:getNumberCols(Grid),
+    wxGrid:setCellValue(Grid, 249999, 1, "edited"),
+    "edited" = wxGrid:getCellValue(Grid, 249999, 1),
+    [{_, <<"edited">>}] = ets:lookup(Data, {249999, 1}),
+    wxGridTableBase:setRowCount(Table, 250001),
+    250001 = wxGrid:getNumberRows(Grid),
+    wxGridTableBase:setColCount(Table, 4),
+    4 = wxGrid:getNumberCols(Grid),
+    wxGrid:setCellBackgroundColour(Grid, 0, 1, {255, 0, 0}),
+    Editor = wxGridCellChoiceEditor:new(["open", "closed"]),
+    wxGrid:setCellEditor(Grid, 0, 1, Editor),
+    wxWindow:destroy(Frame),
+    wx:destroy(),
+    ets:delete(Data),
+    ok.
 
 %% create several windows from independent processes 
 %% to simulate several applications and test creating a window
