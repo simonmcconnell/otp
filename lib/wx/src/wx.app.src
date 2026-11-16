@@ -29,6 +29,7 @@
   %GEN_MODS%
     %% Handcrafted modules
     wx,
+    wxGridTableBase,
     wx_object,
     wxe_master,
     wxe_server,

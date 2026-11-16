@@ -37,6 +37,7 @@ endif
 ARCHIVE         = wx-$(VSN).ez
 
 ErlMods         = wx \
+		wxGridTableBase \
 		wx_object \
                 wxe_master \
                 wxe_server \
